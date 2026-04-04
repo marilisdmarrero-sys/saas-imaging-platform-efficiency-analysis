@@ -26,7 +26,7 @@ The reason is structural. EHRs are not built to store or render DICOM imaging fi
 
 When platform coverage failed, the fallback was physical — FedEx Express shipping of CDs, with no guarantee the facility would use the prepaid label instead of USPS, adding days of uncontrolled delay to an already time-sensitive case.
 
-Cases had a **5-day SLA** — imaging and records were expected within 5 days of case opening to support specialist consultations. This SLA made SaaS platforms not a preference but an operational necessity.
+Cases had a **5-day target turnaround timeframe** — imaging and records were expected within 5 days of case opening to support specialist consultations. This timeframe made SaaS platforms not a preference but an operational necessity.
 
 ---
 
@@ -58,11 +58,11 @@ For cases involving multiple facilities — patients seen at different health sy
 
 ## Key Operational Context
 
-**The 5-Day SLA Problem**
+**The 5-Day Turnaround Constraint**
 
-The 5-day SLA was achievable for single-facility cases with documented SaaS access. It became increasingly unrealistic as case complexity grew. Multiple facilities, undocumented platforms, or CD-only facilities each added uncontrollable variables that pushed timelines beyond the SLA regardless of operational efficiency.
+The 5-day target turnaround timeframe was achievable for single-facility cases with documented SaaS access. It became increasingly unrealistic as case complexity grew. Multiple facilities, undocumented platforms, or CD-only facilities each added uncontrollable variables that pushed timelines beyond the expected timeframe regardless of operational efficiency.
 
-A more realistic SLA framework would be:
+A more realistic operational framework would be:
 
 - Single facility + documented SaaS → 5 days reasonable
 - Multi-facility or CD-only → 10-15 days more appropriate
@@ -102,7 +102,7 @@ WHERE date_received IS NOT NULL
 GROUP BY retrieval_method;
 ```
 
-**Results:** SaaS platform retrieval averaged **1 day** turnaround while CD retrieval averaged **21 days** — a 20x difference in case processing speed. Given the 5-day consultation SLA, every CD case systematically missed the deadline. This single finding quantifies the operational necessity of SaaS imaging platform access.
+**Results:** SaaS platform retrieval averaged **1 day** turnaround while CD retrieval averaged **21 days** — a 20x difference in case processing speed. Given the 5-day target turnaround timeframe for consultations, CD-based workflows consistently exceeded expected timelines. This single finding quantifies the operational necessity of SaaS imaging platform access.
 
 ---
 
@@ -181,7 +181,7 @@ GROUP BY retrieval_method, delay_reason;
 
 While building this analysis a critical gap emerged: turnaround time tells you how long retrieval took — but not whether that delay actually impacted the patient. To answer that, the data model needed to know when the specialist consultation was scheduled.
 
-A `consultation_date` field was added to the `cases` table to capture the 5-day SLA deadline:
+A `consultation_date` field was added to the `cases` table to capture the 5-day turnaround deadline:
 
 ```sql
 ALTER TABLE cases ADD COLUMN consultation_date DATE;
@@ -190,7 +190,7 @@ UPDATE cases SET consultation_date = date_opened + INTERVAL '5 days';
 
 This extension enabled the analysis to connect operational delays directly to patient care impact — transforming a workflow analysis into a patient outcome analysis.
 
-Additionally the 5-day SLA itself was identified as a structural limitation. The SLA assumed ideal conditions — single facility, documented platform, responsive staff. Real cases introduced variables outside operational control that made the SLA unrealistic for complex multi-facility cases regardless of retrieval method.
+Additionally the 5-day turnaround metric itself was identified as a structural limitation. The expected turnaround time assumed ideal conditions — single facility, documented platform, responsive staff. Real cases introduced variables outside operational control that made the turnaround time unrealistic for complex multi-facility cases regardless of retrieval method.
 
 ---
 
@@ -198,7 +198,7 @@ Additionally the 5-day SLA itself was identified as a structural limitation. The
 
 **Business question:** How many cases missed their 5-day consultation deadline because imaging arrived late or never arrived?
 
-**Reasoning:** Turnaround time differences between retrieval methods are meaningless without understanding their direct impact on patient care. The consultation deadline is the operational SLA — if imaging doesn't arrive before the specialist sees the patient, the consultation is compromised.
+**Reasoning:** Turnaround time differences between retrieval methods are meaningless without understanding their direct impact on patient care. The consultation deadline is the operational turnaround time — if imaging doesn't arrive before the specialist sees the patient, the consultation is compromised.
 
 ```sql
 SELECT COUNT(*) AS cases_missed_deadline
@@ -254,7 +254,7 @@ WHERE r.date_received > c.consultation_date
 OR r.date_received IS NULL;
 ```
 
-**Results:** All 15 missed consultation deadlines were CD retrieval cases. **SaaS retrieval had a 0% deadline miss rate.** Every missed deadline was directly attributable to CD retrieval, which averaged 21 days against a 5-day SLA. This finding makes the operational case for SaaS platform investment unambiguous.
+**Results:** All 15 missed consultation deadlines were CD retrieval cases. **SaaS retrieval had a 0% deadline miss rate.** Every missed deadline was directly attributable to CD retrieval, which averaged 21 days against a 5-day expected turnaround time. This finding makes the operational case for SaaS platform investment unambiguous.
 
 ---
 
